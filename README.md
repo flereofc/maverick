@@ -4,7 +4,7 @@ A local AI chat client for the [Navy API](https://api.navy/dashboard) — an Ope
 
 Bring your own API key. It stays in your browser and is sent only to api.navy. No accounts, no telemetry, no server-side storage.
 
-> © 2025 [YOUR NAME]. All rights reserved — see [License & Copyright](#license--copyright) below.
+> © 2026 flere. All rights reserved — see [License & Copyright](#license--copyright) below.
 
 ## Features
 
@@ -80,7 +80,7 @@ maverick/
 
 ## License & Copyright
 
-Copyright © 2025 [YOUR NAME]. All rights reserved.
+Copyright © 2026 flere. All rights reserved.
 
 Permission is granted to use, fork, and modify this software for personal, non-commercial use, provided that **all** of the following are true:
 
@@ -89,6 +89,6 @@ Permission is granted to use, fork, and modify this software for personal, non-c
 - You do **not** remove or alter this copyright notice.
 - You do **not** sell or commercially redistribute the code or substantial portions of it, rebranded or otherwise.
 
-Any redistribution must prominently attribute the original author and link to the official repository. If you build on this project and share your version, state plainly that it is based on Maverick by [YOUR NAME].
+Any redistribution must prominently attribute the original author and link to the official repository. If you build on this project and share your version, state plainly that it is based on Maverick by flere.
 
 Any use not covered above requires prior written permission from the author.
