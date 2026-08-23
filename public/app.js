@@ -55,9 +55,10 @@ function providerOf(m) {
 
 function isChatModel(m) {
   if (!m || typeof m.id !== 'string') return false;
+  if (isImageModel(m)) return false;
+  if (m.supports_streaming === false) return false;
   if (m.endpoint && m.endpoint !== '/v1/chat/completions') return false;
-  if (m.supports_streaming !== true) return false;
-  if (/(embedding|transcrib|tts|whisper|flux|veo|image|moderation|search-api|scrib|eleven)/i.test(m.id)) return false;
+  if (/(embedding|transcrib|tts|whisper|flux|veo|moderation|search-api|scrib|eleven)/i.test(m.id)) return false;
   return true;
 }
 
