@@ -1,0 +1,21 @@
+{
+  "name": "maverick",
+  "version": "1.0.0",
+  "description": "Maverick — a local, bring-your-own-key AI chat client for the Navy API (OpenAI-compatible). No dependencies, no account, no tracking.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "llm",
+    "navy-api",
+    "openai-compatible",
+    "local-first"
+  ],
+  "license": "UNLICENSED"
+}
