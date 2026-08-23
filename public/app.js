@@ -149,11 +149,25 @@ async function loadModels() {
     state.models = (cached && cached.length) ? cached : FALLBACK_MODELS;
   }
   if (!state.models.some((m) => m.id === state.model)) {
-    if (state.models.length) state.model = state.models[0].id;
+    if (state.models.length) state.model = pickDefaultModel(state.models);
   }
   renderModelButton();
   renderModelPanel('');
   updateComposerMode();
+}
+
+function pickDefaultModel(models) {
+  for (const wanted of ['gpt-5.2', 'openai/gpt-5.2', 'openai/gpt-4o']) {
+    const hit = models.find((m) => m.id === wanted);
+    if (hit) return hit.id;
+  }
+  const groups = [/^openai\//, /^anthropic\//, /^google\//, /^deepseek\//, /^meta-llama\//, /^mistralai\//, /^qwen\//];
+  for (const g of groups) {
+    const hit = models.find((m) => g.test(m.id) && !/stealth|-exp|contributor|preview/i.test(m.id));
+    if (hit) return hit.id;
+  }
+  const clean = models.find((m) => !/stealth|-exp|contributor|preview/i.test(m.id));
+  return clean ? clean.id : models[0].id;
 }
 
 function renderModelButton() {
@@ -252,6 +266,9 @@ function renderModelPanel(query) {
 function selectModel(id) {
   state.model = id;
   localStorage.setItem(LS.model, id);
+  if (/stealth|-exp|contributor|preview/i.test(id)) {
+    toast('Heads up: this model is experimental and may output nonsense.', 'info');
+  }
   renderModelButton();
   updateComposerMode();
   closeModelPanel();
@@ -1332,6 +1349,11 @@ function init() {
       openModelPanel();
     }
     if (e.key === 'Escape') {
+      if (state.streaming) {
+        stopStream();
+        toast('Generation stopped.', 'info');
+        return;
+      }
       if (!$('model-panel').hidden) closeModelPanel();
       else if ($('drawer-root').innerHTML) closeSettings();
     }
