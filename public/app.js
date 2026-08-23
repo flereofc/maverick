@@ -87,7 +87,7 @@ const state = {
   model: localStorage.getItem(LS.model) || DEFAULT_MODEL,
   system: localStorage.getItem(LS.system) || '',
   temp: parseFloat(localStorage.getItem(LS.temp)) || 0.7,
-  theme: localStorage.getItem(LS.theme) || 'light',
+  theme: localStorage.getItem(LS.theme) || 'dark',
   chats: [],
   activeId: localStorage.getItem(LS.active) || null,
   models: [],
@@ -1261,7 +1261,7 @@ function toast(message, type = 'info') {
 }
 
 function init() {
-  applyTheme(state.theme || 'light');
+  applyTheme(state.theme || 'dark');
   updateKeyStatus();
   renderSidebar();
   renderChat();
