@@ -22,7 +22,7 @@ Bring your own API key. It stays in your browser and is sent only to api.navy. N
 ## Run it
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/flereofc/maverick
 cd maverick
 npm start
 ```
