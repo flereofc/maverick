@@ -851,6 +851,7 @@ async function streamChat(chat, idx, msgEl) {
       tbody.textContent = reasoning;
     }
     contentEl.innerHTML = renderMarkdown(content);
+    scrollToBottom(false);
   };
 
   const schedulePaint = () => {
@@ -1138,15 +1139,20 @@ function autoResize() {
   input.style.height = Math.min(input.scrollHeight, 220) + 'px';
 }
 
-function scrollToBottom(force) {
+let stickToBottom = true;
+
+function updateScrollButton() {
   const msgsEl = $('messages');
   const nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 140;
-  if (force || nearBottom) {
-    msgsEl.scrollTop = msgsEl.scrollHeight;
-    $('scroll-down-btn').hidden = true;
-  } else {
-    $('scroll-down-btn').hidden = false;
-  }
+  stickToBottom = nearBottom;
+  $('scroll-down-btn').hidden = nearBottom;
+}
+
+function scrollToBottom(force) {
+  const msgsEl = $('messages');
+  if (force) stickToBottom = true;
+  if (stickToBottom) msgsEl.scrollTop = msgsEl.scrollHeight;
+  updateScrollButton();
 }
 
 function openSettings() {
@@ -1395,7 +1401,7 @@ function init() {
     }
   });
 
-  $('messages').addEventListener('scroll', () => scrollToBottom(false));
+  $('messages').addEventListener('scroll', () => updateScrollButton());
   $('scroll-down-btn').onclick = () => {
     const m = $('messages');
     m.style.scrollBehavior = 'smooth';
