@@ -46,13 +46,13 @@ Then open **http://localhost:3000**.
 
 ## CLI
 
-Maverick also ships a zero-dependency terminal client:
+Maverick also ships a zero-dependency terminal client with a **fullscreen TUI** — status bar, scrolling transcript, boxed input:
 
 ```bash
 npm run cli
 ```
 
-(or `node cli.js` — same thing)
+(or `node cli.js`; use `--plain` or `MAVERICK_TUI=0` for the classic prompt mode)
 
 **One-shot mode** (great for scripting):
 
@@ -72,7 +72,9 @@ node cli.js -p "explain database indexes in one paragraph"
 | `/image <prompt>` | generate an image, saved to disk |
 | `/new` / `/save [file]` / `/config` / `/exit` | housekeeping |
 
-Streaming answers render as Markdown-lite in the terminal; token usage prints after every reply. Config lives in `~/.maverick/config.json`; env overrides: `MAVERICK_API_KEY`, `MAVERICK_BASE_URL`, `MAVERICK_MODEL`.
+**TUI keys:** `enter` send · `pgup/pgdn` scroll transcript · `↑/↓` input history · `ctrl+c` stop generation (twice quits) · `esc` stop/clear
+
+Streaming answers render as Markdown-lite; token usage prints after every reply and totals in the status bar. Config lives in `~/.maverick/config.json`; env overrides: `MAVERICK_API_KEY`, `MAVERICK_BASE_URL`, `MAVERICK_MODEL`.
 
 ## Get an API key
 
