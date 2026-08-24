@@ -208,7 +208,10 @@ function streamChat(messages, handlers) {
     if (res.statusCode !== 200) {
       let data = '';
       res.on('data', (c) => (data += c));
-      res.on('end', () => handlers.error(new Error(parseErrorBody(data) || `HTTP ${res.statusCode}`)));
+      res.on('end', () => {
+        const msg = parseErrorBody(data) || `HTTP ${res.statusCode}`;
+        handlers.error(new Error(`${msg} [${cfg.baseUrl}]`));
+      });
       return;
     }
     let buf = '';
