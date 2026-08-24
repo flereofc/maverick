@@ -625,7 +625,27 @@ function updateComposerMode() {
   }
 }
 
-async function sendImageMessage(prompt) {
+function looksLikeImagePrompt(text) {
+  const t = text.toLowerCase();
+  if (/(diagram|chart|graph|flowchart|blueprint|schematic|screenshot|ascii|architecture)/.test(t)) return false;
+  if (/\b(image|images|picture|pictures|photo|photos|photorealistic|artwork|illustration|logo|logos|icon|icons|wallpaper|drawing|painting|portrait|poster|banner|thumbnail|mascot)\b/i.test(text) && /\b(draw|paint|sketch|generate|create|make|render|show|give|design)\b/i.test(text)) return true;
+  if (/^\s*(draw|paint|sketch|illustrate)\b/i.test(text)) return true;
+  if (/\b(draw|paint|generate|create|make)\s+(me\s+)?(a|an|the)?\s*(cute|realistic|3d|pixel|anime|photorealistic|cyberpunk|fantasy|medieval|futuristic|watercolor|oil)/i.test(text)) return true;
+  return false;
+}
+
+function pickImageModelId() {
+  const cands = state.models.filter(isImageModel);
+  if (!cands.length) return null;
+  const saved = localStorage.getItem('maverick.imageModel');
+  if (saved && cands.some((m) => m.id === saved)) return saved;
+  const prefer = cands.find((m) => /flux\.1-schnell/i.test(m.id)) || cands.find((m) => /flux/i.test(m.id)) || cands.find((m) => /gpt-image-1/i.test(m.id)) || cands[0];
+  try { localStorage.setItem('maverick.imageModel', prefer.id); } catch { }
+  return prefer.id;
+}
+
+async function sendImageMessage(prompt, modelOverride) {
+  const imgModel = modelOverride || state.model;
   const input = $('input');
   let chat = currentChat();
   if (!chat) {
@@ -638,7 +658,7 @@ async function sendImageMessage(prompt) {
   chat.updatedAt = Date.now();
 
   const aIdx = chat.messages.length;
-  chat.messages.push({ role: 'assistant', content: 'Generating image…', model: state.model, ts: Date.now() });
+  chat.messages.push({ role: 'assistant', content: 'Generating image…', model: imgModel, ts: Date.now() });
 
   input.value = '';
   autoResize();
@@ -654,7 +674,7 @@ async function sendImageMessage(prompt) {
   const controller = new AbortController();
   state.abort = controller;
 
-  const mobj = state.models.find((x) => x.id === state.model);
+  const mobj = state.models.find((x) => x.id === imgModel);
   const viaChatRoute = !!(mobj && mobj.architecture && Array.isArray(mobj.architecture.output_modalities) && mobj.architecture.output_modalities.includes('image'));
 
   try {
@@ -662,13 +682,13 @@ async function sendImageMessage(prompt) {
       ? await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-api-key': state.apiKey, 'x-base-url': state.baseUrl },
-          body: JSON.stringify({ model: state.model, messages: [{ role: 'user', content: prompt }], stream: false }),
+          body: JSON.stringify({ model: imgModel, messages: [{ role: 'user', content: prompt }], stream: false }),
           signal: controller.signal,
         })
       : await fetch('/api/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-api-key': state.apiKey, 'x-base-url': state.baseUrl },
-          body: JSON.stringify({ model: state.model, prompt, n: 1, size: '1024x1024' }),
+          body: JSON.stringify({ model: imgModel, prompt, n: 1, size: '1024x1024' }),
           signal: controller.signal,
         });
 
@@ -710,13 +730,13 @@ async function sendImageMessage(prompt) {
       role: 'assistant',
       content: prompt,
       image: image,
-      model: state.model,
+      model: imgModel,
       ts: Date.now(),
     };
     chat.updatedAt = Date.now();
   } catch (err) {
     if (err.name === 'AbortError') {
-      chat.messages[aIdx] = { role: 'assistant', content: '(stopped)', model: state.model, ts: Date.now() };
+      chat.messages[aIdx] = { role: 'assistant', content: '(stopped)', model: imgModel, ts: Date.now() };
       toast('Generation stopped.', 'info');
     } else {
       console.error(err);
@@ -761,6 +781,14 @@ async function sendMessage() {
   if (images.length && !modelSupportsVision()) {
     toast('This model does not support image input — pick a model with the vision badge.', 'error');
     return;
+  }
+
+  if (!images.length) {
+    const autoImgModel = pickImageModelId();
+    if (autoImgModel && looksLikeImagePrompt(text)) {
+      toast('Image request — generating with ' + autoImgModel, 'info');
+      return sendImageMessage(text, autoImgModel);
+    }
   }
 
   let chat = currentChat();

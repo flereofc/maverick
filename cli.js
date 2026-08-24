@@ -258,8 +258,9 @@ function imageMime(b64) {
   return 'png';
 }
 
-async function generateImage(prompt) {
-  const body = JSON.stringify({ model: cfg.model, prompt, n: 1, size: '1024x1024' });
+async function generateImage(prompt, modelOverride) {
+  const imgModel = modelOverride || cfg.model;
+  const body = JSON.stringify({ model: imgModel, prompt, n: 1, size: '1024x1024' });
   const upstream = resolveUpstream(cfg.baseUrl, '/v1/images/generations', 'POST', {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${cfg.key}`,
@@ -403,6 +404,31 @@ function makeConsoleSpinner(label) {
       process.stdout.write('\r\x1b[K');
     },
   };
+}
+
+function isImageModel(m) {
+  if (!m || typeof m.id !== 'string') return false;
+  if (/veo/i.test(m.id)) return false;
+  const arch = m.architecture;
+  if (arch && Array.isArray(arch.output_modalities) && arch.output_modalities.includes('image')) return true;
+  if (m.endpoint === '/v1/images/generations') return true;
+  return false;
+}
+
+function looksLikeImagePrompt(text) {
+  const t = text.toLowerCase();
+  if (/(diagram|chart|graph|flowchart|blueprint|schematic|screenshot|ascii|architecture)/.test(t)) return false;
+  if (/\b(image|images|picture|pictures|photo|photos|photorealistic|artwork|illustration|logo|logos|icon|icons|wallpaper|drawing|painting|portrait|poster|banner|thumbnail|mascot)\b/i.test(text) && /\b(draw|paint|sketch|generate|create|make|render|show|give|design)\b/i.test(text)) return true;
+  if (/^\s*(draw|paint|sketch|illustrate)\b/i.test(text)) return true;
+  if (/\b(draw|paint|generate|create|make)\s+(me\s+)?(a|an|the)?\s*(cute|realistic|3d|pixel|anime|photorealistic|cyberpunk|fantasy|medieval|futuristic|watercolor|oil)/i.test(text)) return true;
+  return false;
+}
+
+async function pickImageModel() {
+  const cands = (modelsCache || (await getModels().catch(() => []))).filter(isImageModel);
+  if (!cands.length) return null;
+  const prefer = cands.find((m) => /flux\.1-schnell/i.test(m.id)) || cands.find((m) => /flux/i.test(m.id)) || cands.find((m) => /gpt-image-1/i.test(m.id)) || cands[0];
+  return prefer.id;
 }
 
 function pickDefault(models) {
@@ -1057,7 +1083,13 @@ async function runCommand(raw) {
       }
       ui.spin(true, 'generating image');
       try {
-        const file = await generateImage(arg);
+        const im = await pickImageModel();
+        if (!im) {
+          ui.spin(false);
+          ui.out(red('No image-capable model on this provider.'));
+          return;
+        }
+        const file = await generateImage(arg, im);
         ui.spin(false);
         ui.out(green('✓ saved ') + file);
       } catch (e) {
@@ -1171,6 +1203,23 @@ submitHandler = async function (raw) {
   if (!cfg.key) {
     ui.out(red('✗ no API key.') + dim(' run /key <apikey> first.'));
     return;
+  }
+
+  if (looksLikeImagePrompt(text)) {
+    const im = await pickImageModel().catch(() => null);
+    if (im) {
+      ui.out(dim('🎨 image request — using ' + im));
+      ui.spin(true, 'generating image');
+      try {
+        const file = await generateImage(text, im);
+        ui.spin(false);
+        ui.out(green('✓ saved ') + file);
+      } catch (e) {
+        ui.spin(false);
+        ui.out(red('✗ ' + e.message));
+      }
+      return;
+    }
   }
 
   history.push({ role: 'user', content: text });
