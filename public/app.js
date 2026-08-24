@@ -1316,7 +1316,6 @@ function init() {
   $('new-chat-btn').onclick = newChat;
   $('empty-new-btn').onclick = newChat;
   $('settings-btn').onclick = openSettings;
-  $('top-settings-btn').onclick = openSettings;
   $('key-status-btn').onclick = openSettings;
   $('theme-toggle').onclick = () => applyTheme(state.theme === 'light' ? 'dark' : 'light');
 
