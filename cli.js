@@ -406,11 +406,17 @@ function makeConsoleSpinner(label) {
 }
 
 function pickDefault(models) {
-  for (const wanted of ['gpt-5.2', 'openai/gpt-5.2', 'openai/gpt-4o']) {
-    const hit = models.find((m) => m.id === wanted);
+  const isOpenRouter = /openrouter/i.test(cfg.baseUrl);
+  const wanted = isOpenRouter
+    ? ['deepseek/deepseek-chat', 'deepseek/deepseek-chat-v3-0324:free', 'openai/gpt-5.2']
+    : ['gpt-5.2', 'openai/gpt-5.2', 'openai/gpt-4o'];
+  for (const w of wanted) {
+    const hit = models.find((m) => m.id === w);
     if (hit) return hit.id;
   }
-  const groups = [/^openai\//, /^anthropic\//, /^google\//, /^deepseek\//, /^meta-llama\//, /^mistralai\//, /^qwen\//];
+  const groups = isOpenRouter
+    ? [/^deepseek\//, /^openai\//, /^anthropic\//, /^google\//, /^meta-llama\//, /^mistralai\//, /^qwen\//]
+    : [/^openai\//, /^anthropic\//, /^google\//, /^deepseek\//, /^meta-llama\//, /^mistralai\//, /^qwen\//];
   for (const g of groups) {
     const hit = models.find((m) => g.test(m.id) && !/stealth|-exp|contributor|preview/i.test(m.id));
     if (hit) return hit.id;
