@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "description": "Maverick — a local, bring-your-own-key AI chat client for the Navy API (OpenAI-compatible). No dependencies, no account, no tracking.",
   "main": "server.js",
+  "bin": {
+    "maverick": "./cli.js"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "cli": "node cli.js"
   },
   "engines": {
     "node": ">=16"

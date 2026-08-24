@@ -13,6 +13,7 @@ Bring your own API key. It stays in your browser and is sent only to api.navy. N
 - 🧠 Reasoning display for models that stream `reasoning_content`
 - 🗂 Conversation history saved in your browser (localStorage), with auto-titles
 - ⚙️ Settings: API key, system prompt, temperature, light/dark theme
+- 🖥️ Built-in **CLI** — streaming terminal chat with slash commands, model search, image generation and one-shot mode
 - 🧼 Zero runtime dependencies — works offline once served, no npm install needed
 
 ## Requirements
@@ -42,6 +43,36 @@ Then open **http://localhost:3000**.
 | `EADDRINUSE: port 3000 in use` | Another app is using port 3000 — run `$env:PORT=3001; npm start` (PowerShell) or `PORT=3001 npm start` (macOS/Linux) |
 | `Cannot find module …` | You are not inside the repo folder — `cd` into the folder that contains `package.json` |
 | Page loads but is unstyled / API errors | You opened `index.html` directly from the file system — always run it through `npm start` |
+
+## CLI
+
+Maverick also ships a zero-dependency terminal client:
+
+```bash
+npm run cli
+```
+
+(or `node cli.js` — same thing)
+
+**One-shot mode** (great for scripting):
+
+```bash
+node cli.js -p "explain database indexes in one paragraph"
+```
+
+**First run:** `/key sk-your-key` → `/provider openrouter` → `/find claude` → `/model 3`
+
+| Command | What it does |
+|---|---|
+| `/key <key>` | save your API key |
+| `/provider <name\|url>` | navy · openrouter · openai · groq · or full URL |
+| `/find <query>` | search models (then `/model <number>`) |
+| `/model <id\|number>` | switch model |
+| `/system <text>` / `/temp <0-2>` | system prompt / temperature |
+| `/image <prompt>` | generate an image, saved to disk |
+| `/new` / `/save [file]` / `/config` / `/exit` | housekeeping |
+
+Streaming answers render as Markdown-lite in the terminal; token usage prints after every reply. Config lives in `~/.maverick/config.json`; env overrides: `MAVERICK_API_KEY`, `MAVERICK_BASE_URL`, `MAVERICK_MODEL`.
 
 ## Get an API key
 
