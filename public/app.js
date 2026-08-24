@@ -1396,7 +1396,13 @@ function init() {
   });
 
   $('messages').addEventListener('scroll', () => scrollToBottom(false));
-  $('scroll-down-btn').onclick = () => scrollToBottom(true);
+  $('scroll-down-btn').onclick = () => {
+    const m = $('messages');
+    m.style.scrollBehavior = 'smooth';
+    m.scrollTop = m.scrollHeight;
+    m.style.scrollBehavior = 'auto';
+    $('scroll-down-btn').hidden = true;
+  };
 
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {

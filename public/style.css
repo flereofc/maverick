@@ -340,8 +340,8 @@ a:hover { text-decoration-color: var(--text); }
 .messages {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 24px 20px;
-  scroll-behavior: smooth;
 }
 
 .msg {
