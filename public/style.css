@@ -22,6 +22,9 @@
   --danger-soft: rgba(229, 83, 75, 0.12);
   --ok: #3fb950;
   --code-bg: #161514;
+  --scrollbar-dot: #45423c;
+  --scrollbar-dash: #a9a59c;
+  --scrollbar-dash-hover: #f0eeea;
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
   --ring: 0 0 0 1px var(--border-strong);
@@ -50,6 +53,9 @@
   --danger-soft: rgba(207, 34, 46, 0.09);
   --ok: #1a7f37;
   --code-bg: #f2f0ea;
+  --scrollbar-dot: #dcd7cb;
+  --scrollbar-dash: #8a857a;
+  --scrollbar-dash-hover: #26241f;
   --shadow-md: 0 8px 30px rgba(30, 27, 22, 0.1);
   --shadow-lg: 0 16px 48px rgba(30, 27, 22, 0.16);
 }
@@ -88,10 +94,45 @@ a:hover { text-decoration-color: var(--text); }
 
 ::selection { background: var(--accent-soft); }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+
+::-webkit-scrollbar-track {
+  background-image: repeating-linear-gradient(to bottom, var(--scrollbar-dot) 0 2px, transparent 2px 8px);
+  background-size: 3px 100%;
+  background-position: center top;
+  background-repeat: repeat-y;
+}
+
+::-webkit-scrollbar-thumb {
+  background-image: repeating-linear-gradient(to bottom, var(--scrollbar-dash) 0 6px, transparent 6px 8px);
+  background-size: 10px 100%;
+  background-position: center top;
+  background-repeat: repeat-y;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-image: repeating-linear-gradient(to bottom, var(--scrollbar-dash-hover) 0 6px, transparent 6px 8px);
+}
+
+::-webkit-scrollbar-track:horizontal {
+  background-image: repeating-linear-gradient(to right, var(--scrollbar-dot) 0 2px, transparent 2px 8px);
+  background-size: 100% 3px;
+  background-position: left center;
+  background-repeat: repeat-x;
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+  background-image: repeating-linear-gradient(to right, var(--scrollbar-dash) 0 6px, transparent 6px 8px);
+  background-size: 100% 10px;
+  background-position: left center;
+  background-repeat: repeat-x;
+}
+
+::-webkit-scrollbar-thumb:horizontal:hover {
+  background-image: repeating-linear-gradient(to right, var(--scrollbar-dash-hover) 0 6px, transparent 6px 8px);
+}
+
+::-webkit-scrollbar-corner { background: transparent; }
 
 :focus-visible { outline: none; box-shadow: var(--ring); border-radius: 4px; }
 
