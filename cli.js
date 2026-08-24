@@ -199,7 +199,11 @@ function streamChat(messages, handlers) {
       res.on('data', (c) => (data += c));
       res.on('end', () => {
         const msg = parseErrorBody(data) || `HTTP ${res.statusCode}`;
-        handlers.error(new Error(`${msg} [${hostLabel()}]`));
+        let full = `${msg} [${hostLabel()}]`;
+        if (/stealth|-exp|contributor|preview/i.test(cfg.model)) {
+          full += dim('  ⚠ experimental model — switch with /find gpt');
+        }
+        handlers.error(new Error(full));
       });
       return;
     }
