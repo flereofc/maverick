@@ -174,14 +174,17 @@ function getModels(force) {
   });
 }
 
-function streamChat(messages, handlers) {
-  const body = JSON.stringify({
+function streamChat(messages, handlers, opts) {
+  const o = opts || {};
+  const bodyObj = {
     model: cfg.model,
     messages,
     temperature,
     stream: true,
     stream_options: { include_usage: true },
-  });
+  };
+  if (o.maxTokens) bodyObj.max_tokens = o.maxTokens;
+  const body = JSON.stringify(bodyObj);
   const upstream = resolveUpstream(cfg.baseUrl, '/v1/chat/completions', 'POST', {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${cfg.key}`,
@@ -1015,6 +1018,24 @@ async function runCommand(raw) {
       ui.out(green('✓ temperature → ') + t);
       return;
     }
+    case '/max': {
+      if (!arg || arg === 'off') {
+        delete cfg.maxTokens;
+        saveConfig(cfg);
+        ui.out(dim('max_tokens cap off (provider default)'));
+        return;
+      }
+      const n = parseInt(arg, 10);
+      if (isNaN(n) || n < 16) {
+        ui.out(red('usage: /max <tokens> · or /max off'));
+        return;
+      }
+      cfg.maxTokens = n;
+      saveConfig(cfg);
+      ui.refresh();
+      ui.out(green('✓ max_tokens → ') + n);
+      return;
+    }
     case '/new':
       history = [];
       ui.out(dim('fresh conversation.'));
@@ -1063,6 +1084,7 @@ async function runCommand(raw) {
           ['model', cfg.model],
           ['key', maskKey(cfg.key)],
           ['temperature', String(temperature)],
+          ['max_tokens', cfg.maxTokens ? String(cfg.maxTokens) : dim('auto')],
           ['system', systemPrompt ? systemPrompt.slice(0, 60) + (systemPrompt.length > 60 ? '…' : '') : dim('off')],
           ['history', history.length + ' messages'],
           ['config file', CONFIG_FILE],
@@ -1090,28 +1112,46 @@ function ctxBadge(m) {
 
 async function chatTurn(text, ui) {
   return new Promise((resolve) => {
-    const messages = buildMessages(text);
-    let answer = '';
+    let attempts = 0;
 
-    currentAbort = streamChat(messages, {
-      token(t) {
-        answer += t;
-        if (ui.streamToken) ui.streamToken(t);
-        else process.stdout.write(t);
-      },
-      reasoning(t) {
-        if (ui.streamReasoning) ui.streamReasoning(dim(t));
-        else process.stdout.write(dim(t));
-      },
-      done(usage, wasStopped) {
-        currentAbort = null;
-        resolve({ answer, usage, stopped: wasStopped });
-      },
-      error(err) {
-        currentAbort = null;
-        resolve({ answer: '', usage: null, error: err.message });
-      },
-    });
+    const attempt = (capTokens) => {
+      const messages = buildMessages(text);
+      let answer = '';
+      const opts = {};
+      if (capTokens) opts.maxTokens = capTokens;
+      else if (cfg.maxTokens) opts.maxTokens = cfg.maxTokens;
+
+      currentAbort = streamChat(messages, {
+        token(t) {
+          answer += t;
+          if (ui.streamToken) ui.streamToken(t);
+          else process.stdout.write(t);
+        },
+        reasoning(t) {
+          if (ui.streamReasoning) ui.streamReasoning(dim(t));
+          else process.stdout.write(dim(t));
+        },
+        done(usage, wasStopped) {
+          currentAbort = null;
+          resolve({ answer, usage, stopped: wasStopped });
+        },
+        error(err) {
+          currentAbort = null;
+          const m = err.message || '';
+          const afford = m.match(/can only afford (\d+)/i);
+          if (!capTokens && afford && attempts < 2) {
+            attempts++;
+            const cap = Math.max(200, parseInt(afford[1], 10) - 64);
+            ui.out(yellow('⚠ credit limit — capping this reply to ' + cap + ' tokens'));
+            attempt(cap);
+            return;
+          }
+          resolve({ answer: '', usage: null, error: m });
+        },
+      }, opts);
+    };
+
+    attempt(null);
   });
 }
 

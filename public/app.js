@@ -823,21 +823,43 @@ async function streamChat(chat, idx, msgEl) {
     if (!rafPending) { rafPending = true; requestAnimationFrame(paint); }
   };
 
-  try {
-    const res = await fetch('/api/chat', {
+  let attemptCap = null;
+
+  const doFetch = () => {
+    const bodyObj = {
+      model: state.model,
+      messages: buildMessages(chat),
+      temperature: state.temp,
+    };
+    if (attemptCap) bodyObj.max_tokens = attemptCap;
+    return fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': state.apiKey,
         'x-base-url': state.baseUrl,
       },
-      body: JSON.stringify({
-        model: state.model,
-        messages: buildMessages(chat),
-        temperature: state.temp,
-      }),
+      body: JSON.stringify(bodyObj),
       signal: controller.signal,
     });
+  };
+
+  try {
+    let res = await doFetch();
+
+    if (!res.ok) {
+      let message = 'Request failed (HTTP ' + res.status + ').';
+      try {
+        const j = await res.json();
+        if (j.error && j.error.message) message = j.error.message;
+      } catch { }
+      const afford = message.match(/can only afford (\d+)/i);
+      if (attemptCap === null && afford && parseInt(afford[1], 10) > 264) {
+        attemptCap = parseInt(afford[1], 10) - 64;
+        toast('Credit limit — capping this reply to ' + attemptCap + ' tokens.', 'info');
+        res = await doFetch();
+      }
+    }
 
     if (!res.ok) {
       let message = 'Request failed (HTTP ' + res.status + ').';

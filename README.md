@@ -69,6 +69,7 @@ node cli.js -p "explain database indexes in one paragraph"
 | `/find <query>` | search models (then `/model <number>`) |
 | `/model <id\|number>` | switch model |
 | `/system <text>` / `/temp <0-2>` | system prompt / temperature |
+| `/max <tokens>` / `/max off` | cap reply length (auto-caps on low credit anyway) |
 | `/image <prompt>` | generate an image, saved to disk |
 | `/new` / `/save [file]` / `/config` / `/exit` | housekeeping |
 
