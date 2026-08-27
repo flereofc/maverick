@@ -1381,6 +1381,8 @@ function init() {
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
+      const v = input.value.trim();
+      if (v === '/youtube') { window.open('https://stopify.co/VEWIZB', '_blank'); input.value = ''; return; }
       sendMessage();
     }
   });
