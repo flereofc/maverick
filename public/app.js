@@ -94,6 +94,7 @@ const state = {
   streaming: false,
   abort: null,
   pendingImages: [],
+  convQuery: '',
 };
 
 try { state.chats = JSON.parse(localStorage.getItem(LS.chats) || '[]') || []; } catch { state.chats = []; }
@@ -328,16 +329,18 @@ function renderSidebar() {
   const listEl = $('conv-list');
   listEl.innerHTML = '';
   const sorted = [...state.chats].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const q = (state.convQuery || '').toLowerCase().trim();
+  const filtered = q ? sorted.filter(c => chatTitle(c).toLowerCase().includes(q)) : sorted;
 
-  if (!sorted.length) {
+  if (!filtered.length) {
     const empty = document.createElement('div');
     empty.style.cssText = 'padding:14px 12px;font-size:12.5px;color:var(--text-faint);text-align:center;';
-    empty.textContent = 'No conversations yet';
+    empty.textContent = q ? 'No matches' : 'No conversations yet';
     listEl.appendChild(empty);
     return;
   }
 
-  for (const c of sorted) {
+  for (const c of filtered) {
     const item = document.createElement('div');
     item.className = 'conv-item' + (c.id === state.activeId ? ' active' : '');
 
@@ -1391,6 +1394,37 @@ function init() {
     if (e.key === 'Enter') {
       const first = $('model-list').querySelector('.model-item');
       if (first) first.click();
+    }
+  });
+
+  $('workspace-btn').onclick = () => {
+    $('workspace-menu').hidden = !$('workspace-menu').hidden;
+  };
+  $('workspace-menu').querySelectorAll('[data-act]').forEach((b) => {
+    b.onclick = () => { $('workspace-menu').hidden = true; };
+  });
+
+  $('search-toggle').onclick = () => {
+    $('search-box').hidden = false;
+    $('search-toggle').hidden = true;
+    $('chats-label').style.opacity = '0';
+    setTimeout(() => $('conv-search').focus(), 50);
+  };
+  $('search-close').onclick = () => {
+    $('search-box').hidden = true;
+    $('search-toggle').hidden = false;
+    $('chats-label').style.opacity = '1';
+    $('conv-search').value = '';
+    state.convQuery = '';
+    renderSidebar();
+  };
+  $('conv-search').addEventListener('input', () => {
+    state.convQuery = $('conv-search').value;
+    renderSidebar();
+  });
+  $('conv-search').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      $('search-close').click();
     }
   });
 
