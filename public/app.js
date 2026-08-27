@@ -474,10 +474,16 @@ function renderMessage(msg) {
     details.className = 'thinking';
     details.open = false;
     const sum = document.createElement('summary');
-    sum.textContent = 'Thinking';
+    sum.textContent = 'Thought · ' + msg.reasoning.split(/\n+/).filter(s => s.trim()).length + ' steps';
     const tbody = document.createElement('div');
     tbody.className = 'thinking-body';
-    tbody.textContent = msg.reasoning;
+    const steps = msg.reasoning.split(/\n+/).map(s => s.replace(/^[-*•\d.\s]+/, '').trim()).filter(Boolean);
+    for (const s of steps) {
+      const row = document.createElement('div');
+      row.className = 'step';
+      row.textContent = s;
+      tbody.appendChild(row);
+    }
     details.append(sum, tbody);
     body.appendChild(details);
   }
@@ -834,8 +840,13 @@ async function streamChat(chat, idx, msgEl) {
   const thinkingEl = document.createElement('details');
   thinkingEl.className = 'thinking';
   thinkingEl.open = true;
+  const startTime = Date.now();
   const sum = document.createElement('summary');
-  sum.textContent = 'Thinking…';
+  const updateSum = () => {
+    const sec = Math.round((Date.now() - startTime) / 1000);
+    sum.textContent = 'Thought for ' + sec + ' sec';
+  };
+  const sumInterval = setInterval(updateSum, 500);
   const tbody = document.createElement('div');
   tbody.className = 'thinking-body';
   thinkingEl.append(sum, tbody);
@@ -851,7 +862,14 @@ async function streamChat(chat, idx, msgEl) {
     rafPending = false;
     if (reasoning) {
       thinkingEl.hidden = false;
-      tbody.textContent = reasoning;
+      tbody.innerHTML = '';
+      const steps = reasoning.split(/\n+/).map(s => s.replace(/^[-*•\d.\s]+/, '').trim()).filter(Boolean);
+      for (const s of steps) {
+        const row = document.createElement('div');
+        row.className = 'step';
+        row.textContent = s;
+        tbody.appendChild(row);
+      }
     }
     contentEl.innerHTML = renderMarkdown(content);
     scrollToBottom(false);
@@ -945,8 +963,10 @@ async function streamChat(chat, idx, msgEl) {
 
     if (rafPending) await new Promise((r) => requestAnimationFrame(() => { paint(); r(); }));
     paint();
+    clearInterval(sumInterval);
     thinkingEl.open = false;
-    sum.textContent = reasoning ? 'Thinking · ' + (usage && usage.completion_tokens_details && usage.completion_tokens_details.reasoning_tokens || '') + ' tok' : 'Thinking';
+    const sec = Math.round((Date.now() - startTime) / 1000);
+    sum.textContent = 'Thought for ' + sec + ' sec' + (reasoning ? ' · ' + reasoning.split(/\n+/).filter(s => s.trim()).length + ' steps' : '');
 
     chat.messages[idx] = { role: 'assistant', content: content, reasoning: reasoning || null, model: state.model, usage: usage, ts: Date.now() };
     chat.updatedAt = Date.now();

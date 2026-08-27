@@ -409,21 +409,25 @@ a:hover { text-decoration-color: var(--text); }
 }
 .thinking summary::-webkit-details-marker { display: none; }
 .thinking summary::before {
-  content: "";
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-faint);
+  content: "+";
+  color: var(--text-faint);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1;
+  width: 12px;
+  text-align: center;
+  transition: transform 0.15s ease;
 }
-.thinking[open] summary::before { background: var(--ok); }
+.thinking[open] summary::before { content: "−"; }
 .thinking summary::after {
-  content: "âŒ„";
+  content: "⌄";
   margin-left: auto;
   color: var(--text-faint);
   transition: transform 0.15s ease;
 }
 .thinking[open] summary::after { transform: rotate(180deg); }
 .thinking-body {
-  padding: 4px 14px 12px;
+  padding: 8px 14px 14px;
   font-size: 13px;
   color: var(--text-muted);
   white-space: pre-wrap;
@@ -431,7 +435,10 @@ a:hover { text-decoration-color: var(--text); }
   max-height: 260px;
   overflow-y: auto;
   border-top: 1px solid var(--border);
+  line-height: 1.45;
 }
+.thinking-body .step { display: flex; align-items: flex-start; gap: 8px; padding: 2px 0; }
+.thinking-body .step::before { content: "✓"; color: var(--ok); font-weight: 700; flex-shrink: 0; width: 14px; text-align: center; }
 
 .msg-content { font-size: 15px; line-height: 1.7; }
 
