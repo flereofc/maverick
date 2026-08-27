@@ -1449,6 +1449,26 @@ function init() {
   $('empty-new-btn').onclick = newChat;
   $('settings-btn').onclick = openSettings;
   $('key-status-btn').onclick = openSettings;
+
+  $('workspace-btn').onclick = () => {
+    $('workspace-menu').hidden = !$('workspace-menu').hidden;
+  };
+  $('search-toggle').onclick = () => {
+    $('search-box').hidden = false;
+    $('chats-label').style.opacity = '0';
+    setTimeout(() => $('conv-search').focus(), 50);
+  };
+  $('search-close').onclick = () => {
+    $('search-box').hidden = true;
+    $('chats-label').style.opacity = '1';
+    $('conv-search').value = '';
+    state.convQuery = '';
+    renderSidebar();
+  };
+  $('conv-search').addEventListener('input', (e) => {
+    state.convQuery = e.target.value;
+    renderSidebar();
+  });
   $('theme-toggle').onclick = () => applyTheme(state.theme === 'light' ? 'dark' : 'light');
 
   const wsBtn = $('workspace-btn');
@@ -1476,11 +1496,12 @@ function init() {
 
   const collapseSidebar = (collapsed) => {
     document.getElementById('sidebar').dataset.collapsed = String(collapsed);
-    try { localStorage.setItem('maverick.sidebar', collapsed ? '1' : '0'); } catch { }
+    try { if (collapsed) localStorage.setItem('maverick.sidebar', '1'); else localStorage.removeItem('maverick.sidebar'); } catch { }
   };
   $('sidebar-collapse').onclick = () => collapseSidebar(true);
   $('sidebar-expand').onclick = () => collapseSidebar(false);
-  if (localStorage.getItem('maverick.sidebar') === '1') collapseSidebar(true);
+  // Sidebar defaults expanded; user preference preserved if set to '1', but recoverable via expand button
+  // Don't force collapse on load — that was trapping users.
 
   const searchBox = $('search-box');
   const convSearch = $('conv-search');
