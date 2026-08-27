@@ -94,7 +94,6 @@ const state = {
   streaming: false,
   abort: null,
   pendingImages: [],
-  convQuery: '',
 };
 
 try { state.chats = JSON.parse(localStorage.getItem(LS.chats) || '[]') || []; } catch { state.chats = []; }
@@ -328,15 +327,12 @@ function relTime(ts) {
 function renderSidebar() {
   const listEl = $('conv-list');
   listEl.innerHTML = '';
-  const q = (state.convQuery || '').trim().toLowerCase();
-  const sorted = [...state.chats]
-    .filter((c) => !q || chatTitle(c).toLowerCase().includes(q))
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const sorted = [...state.chats].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
   if (!sorted.length) {
     const empty = document.createElement('div');
-    empty.className = 'conv-empty';
-    empty.textContent = q ? 'No chats found' : 'No conversations yet';
+    empty.style.cssText = 'padding:14px 12px;font-size:12.5px;color:var(--text-faint);text-align:center;';
+    empty.textContent = 'No conversations yet';
     listEl.appendChild(empty);
     return;
   }
@@ -344,7 +340,6 @@ function renderSidebar() {
   for (const c of sorted) {
     const item = document.createElement('div');
     item.className = 'conv-item' + (c.id === state.activeId ? ' active' : '');
-    item.title = chatTitle(c);
 
     const title = document.createElement('span');
     title.className = 'conv-title';
@@ -472,22 +467,16 @@ function renderMessage(msg) {
   body.className = 'msg-body';
 
   if (msg.reasoning) {
-    const wrap = document.createElement('div');
-    wrap.className = 'think collapsed';
-    wrap.innerHTML =
-      '<div class="think-head">' +
-      '<svg class="think-spark" viewBox="0 0 24 24" width="15" height="15"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>' +
-      '<span class="think-label">Thought</span><svg class="think-chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>' +
-      '<div class="think-trace"><div class="think-trace-inner"><span class="think-line"></span><div class="think-rows"></div></div></div>';
-    const rowsEl = wrap.querySelector('.think-rows');
-    for (const line of msg.reasoning.split('\n')) {
-      const row = document.createElement('div');
-      row.className = 'think-row';
-      row.textContent = line;
-      rowsEl.appendChild(row);
-    }
-    wrap.querySelector('.think-head').addEventListener('click', () => wrap.classList.toggle('collapsed'));
-    body.appendChild(wrap);
+    const details = document.createElement('details');
+    details.className = 'thinking';
+    details.open = false;
+    const sum = document.createElement('summary');
+    sum.textContent = 'Thinking';
+    const tbody = document.createElement('div');
+    tbody.className = 'thinking-body';
+    tbody.textContent = msg.reasoning;
+    details.append(sum, tbody);
+    body.appendChild(details);
   }
 
   const content = document.createElement('div');
@@ -678,9 +667,6 @@ async function sendImageMessage(prompt, modelOverride) {
   renderChat();
   scrollToBottom(true);
 
-  const imgMsgEl = $('messages').children[aIdx];
-  const loaderStop = imgMsgEl ? showPixelLoader(imgMsgEl.querySelector('.msg-content'), 'Generating image') : null;
-
   state.streaming = true;
   $('send-btn').hidden = true;
   $('stop-btn').hidden = false;
@@ -758,7 +744,6 @@ async function sendImageMessage(prompt, modelOverride) {
       toast('Image generation failed.', 'error');
     }
   } finally {
-    if (loaderStop) loaderStop();
     state.streaming = false;
     state.abort = null;
     $('send-btn').hidden = false;
@@ -832,95 +817,6 @@ async function sendMessage() {
   await streamChat(chat, aIdx, msgEl);
 }
 
-const PIXEL_DELAYS = Array.from({ length: 9 }, (_, i) => {
-  const r = Math.floor(i / 3), c = i % 3;
-  return (c + Math.abs(r - 1)) * 90;
-});
-
-function pixelGrid(round) {
-  const grid = document.createElement('span');
-  grid.className = 'pixel-grid';
-  for (let i = 0; i < 9; i++) {
-    const cell = document.createElement('span');
-    cell.className = 'pixel-cell' + (round ? ' round' : '');
-    cell.style.animationDelay = PIXEL_DELAYS[i] + 'ms';
-    grid.appendChild(cell);
-  }
-  return grid;
-}
-
-function showPixelLoader(root, label) {
-  const wrap = document.createElement('div');
-  wrap.className = 'pixel-loader';
-  wrap.append(pixelGrid(false));
-  const shimmer = document.createElement('span');
-  shimmer.className = 'shimmer-text';
-  shimmer.textContent = label || 'Churning';
-  const timer = document.createElement('span');
-  timer.className = 'pixel-timer';
-  wrap.append(shimmer, timer);
-  root.innerHTML = '';
-  root.appendChild(wrap);
-  const start = Date.now();
-  const int = setInterval(() => {
-    const total = (Date.now() - start) / 1000;
-    timer.textContent = total < 60 ? total.toFixed(1) + 's' : Math.floor(total / 60) + 'm ' + (total % 60).toFixed(1) + 's';
-  }, 100);
-  return () => clearInterval(int);
-}
-
-function buildThinking() {
-  const root = document.createElement('div');
-  root.className = 'think';
-  root.innerHTML =
-    '<button type="button" class="think-head" aria-expanded="true">' +
-    '<svg class="think-spark" viewBox="0 0 24 24" width="15" height="15"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>' +
-    '<span class="think-label shimmer-text">Thinking</span>' +
-    '<span class="think-timer">0.0s</span>' +
-    '<svg class="think-chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' +
-    '</button>' +
-    '<div class="think-trace"><div class="think-trace-inner"><span class="think-line"></span><div class="think-rows"></div></div></div>';
-  const head = root.querySelector('.think-head');
-  const label = root.querySelector('.think-label');
-  const timer = root.querySelector('.think-timer');
-  const rowsEl = root.querySelector('.think-rows');
-  const start = Date.now();
-  let expanded = true;
-  const int = setInterval(() => {
-    const total = (Date.now() - start) / 1000;
-    timer.textContent = total < 60 ? total.toFixed(1) + 's' : Math.floor(total / 60) + 'm ' + (total % 60).toFixed(1) + 's';
-  }, 100);
-  const setExpanded = (open) => {
-    expanded = open;
-    root.classList.toggle('collapsed', !open);
-    head.setAttribute('aria-expanded', String(open));
-  };
-  head.addEventListener('click', () => setExpanded(!expanded));
-  return {
-    root,
-    setReasoning(text) {
-      rowsEl.innerHTML = '';
-      for (const line of text.split('\n')) {
-        const row = document.createElement('div');
-        row.className = 'think-row';
-        row.textContent = line;
-        rowsEl.appendChild(row);
-      }
-      setExpanded(true);
-    },
-    done() {
-      clearInterval(int);
-      const total = (Date.now() - start) / 1000;
-      label.classList.remove('shimmer-text');
-      label.textContent = 'Thought for ' + (total < 60 ? total.toFixed(1) + 's' : Math.floor(total / 60) + 'm ' + (total % 60).toFixed(1) + 's');
-      setExpanded(false);
-    },
-    abort() {
-      clearInterval(int);
-    },
-  };
-}
-
 async function streamChat(chat, idx, msgEl) {
   state.streaming = true;
   $('send-btn').hidden = true;
@@ -932,9 +828,16 @@ async function streamChat(chat, idx, msgEl) {
   const controller = new AbortController();
   state.abort = controller;
 
-  const think = buildThinking();
-  think.root.hidden = true;
-  msgEl.querySelector('.msg-body').insertBefore(think.root, contentEl);
+  const thinkingEl = document.createElement('details');
+  thinkingEl.className = 'thinking';
+  thinkingEl.open = true;
+  const sum = document.createElement('summary');
+  sum.textContent = 'Thinking…';
+  const tbody = document.createElement('div');
+  tbody.className = 'thinking-body';
+  thinkingEl.append(sum, tbody);
+  msgEl.querySelector('.msg-body').insertBefore(thinkingEl, contentEl);
+  thinkingEl.hidden = true;
 
   let content = '';
   let reasoning = '';
@@ -944,8 +847,8 @@ async function streamChat(chat, idx, msgEl) {
   const paint = () => {
     rafPending = false;
     if (reasoning) {
-      think.root.hidden = false;
-      think.setReasoning(reasoning);
+      thinkingEl.hidden = false;
+      tbody.textContent = reasoning;
     }
     contentEl.innerHTML = renderMarkdown(content);
     scrollToBottom(false);
@@ -1039,7 +942,8 @@ async function streamChat(chat, idx, msgEl) {
 
     if (rafPending) await new Promise((r) => requestAnimationFrame(() => { paint(); r(); }));
     paint();
-    think.done();
+    thinkingEl.open = false;
+    sum.textContent = reasoning ? 'Thinking · ' + (usage && usage.completion_tokens_details && usage.completion_tokens_details.reasoning_tokens || '') + ' tok' : 'Thinking';
 
     chat.messages[idx] = { role: 'assistant', content: content, reasoning: reasoning || null, model: state.model, usage: usage, ts: Date.now() };
     chat.updatedAt = Date.now();
@@ -1053,11 +957,9 @@ async function streamChat(chat, idx, msgEl) {
     enhanceCodeBlocks(msgEl);
   } catch (err) {
     if (err.name === 'AbortError') {
-      think.abort();
       chat.messages[idx] = { role: 'assistant', content: content || '(stopped)', reasoning: reasoning || null, model: state.model, usage: usage, ts: Date.now() };
       toast('Generation stopped.', 'info');
     } else {
-      think.abort();
       console.error(err);
       chat.messages[idx] = { role: 'error', content: 'Network error: ' + err.message, ts: Date.now() };
       toast('Network error — could not reach the local server.', 'error');
@@ -1449,84 +1351,7 @@ function init() {
   $('empty-new-btn').onclick = newChat;
   $('settings-btn').onclick = openSettings;
   $('key-status-btn').onclick = openSettings;
-
-  $('workspace-btn').onclick = () => {
-    $('workspace-menu').hidden = !$('workspace-menu').hidden;
-  };
-  $('search-toggle').onclick = () => {
-    $('search-box').hidden = false;
-    $('chats-label').style.opacity = '0';
-    setTimeout(() => $('conv-search').focus(), 50);
-  };
-  $('search-close').onclick = () => {
-    $('search-box').hidden = true;
-    $('chats-label').style.opacity = '1';
-    $('conv-search').value = '';
-    state.convQuery = '';
-    renderSidebar();
-  };
-  $('conv-search').addEventListener('input', (e) => {
-    state.convQuery = e.target.value;
-    renderSidebar();
-  });
   $('theme-toggle').onclick = () => applyTheme(state.theme === 'light' ? 'dark' : 'light');
-
-  const wsBtn = $('workspace-btn');
-  const wsMenu = $('workspace-menu');
-  const toggleWs = (open) => {
-    wsMenu.hidden = !open;
-    wsBtn.setAttribute('aria-expanded', String(open));
-  };
-  wsBtn.onclick = (e) => {
-    e.stopPropagation();
-    toggleWs(wsMenu.hidden);
-  };
-  document.addEventListener('pointerdown', (e) => {
-    if (!wsMenu.hidden && !wsMenu.contains(e.target) && !wsBtn.contains(e.target)) toggleWs(false);
-  });
-  wsMenu.querySelectorAll('[data-act]').forEach((b) => {
-    b.onclick = () => {
-      const act = b.dataset.act;
-      toggleWs(false);
-      if (act === 'settings') openSettings();
-      else if (act === 'home') newChat();
-      else if (act === 'invite') toast('Invite users — demo only in this build.', 'info');
-    };
-  });
-
-  const collapseSidebar = (collapsed) => {
-    document.getElementById('sidebar').dataset.collapsed = String(collapsed);
-    try { if (collapsed) localStorage.setItem('maverick.sidebar', '1'); else localStorage.removeItem('maverick.sidebar'); } catch { }
-  };
-  $('sidebar-collapse').onclick = () => collapseSidebar(true);
-  $('sidebar-expand').onclick = () => collapseSidebar(false);
-  // Sidebar defaults expanded; user preference preserved if set to '1', but recoverable via expand button
-  // Don't force collapse on load — that was trapping users.
-
-  const searchBox = $('search-box');
-  const convSearch = $('conv-search');
-  const openSearch = (open) => {
-    searchBox.hidden = !open;
-    $('search-toggle').hidden = open;
-    $('chats-label').style.opacity = open ? '0' : '1';
-    if (open) {
-      requestAnimationFrame(() => convSearch.focus());
-    } else {
-      convSearch.value = '';
-      state.convQuery = '';
-      renderSidebar();
-    }
-  };
-  $('search-toggle').onclick = () => openSearch(true);
-  $('search-close').onclick = () => openSearch(false);
-  convSearch.addEventListener('input', () => {
-    state.convQuery = convSearch.value;
-    renderSidebar();
-  });
-  convSearch.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') openSearch(false);
-  });
-  $('home-btn').onclick = newChat;
 
   const input = $('input');
   input.addEventListener('input', autoResize);
