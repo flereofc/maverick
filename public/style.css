@@ -1120,9 +1120,12 @@ input[type="range"] {
   transition: background 0.1s ease, color 0.1s ease;
 }
 .side-icon:hover { background: var(--surface-2); color: var(--text); }
+#sidebar-expand { display: none; }
 #sidebar[data-collapsed="true"] #sidebar-collapse { display: none; }
 #sidebar[data-collapsed="true"] #sidebar-expand { display: inline-flex; }
 #sidebar-expand svg { transform: rotate(180deg); }
+#sidebar[data-collapsed="true"] .workspace-btn { justify-content: center; padding: 0; }
+#sidebar[data-collapsed="true"] .chats-scroll { display: none; }
 
 .workspace-menu {
   position: absolute;
@@ -1353,7 +1356,8 @@ input[type="range"] {
 
 @media (max-width: 760px) {
   #menu-btn { display: inline-flex; }
-  #sidebar {
+  #sidebar,
+  #sidebar[data-collapsed="true"] {
     position: fixed;
     left: 0; top: 0; bottom: 0;
     z-index: 90;
@@ -1362,6 +1366,22 @@ input[type="range"] {
     box-shadow: var(--shadow-lg);
     width: min(300px, 86vw);
   }
+  #sidebar[data-collapsed="true"] .sidebar-copy,
+  #sidebar[data-collapsed="true"] .workspace-chev,
+  #sidebar[data-collapsed="true"] .rail-count {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #sidebar[data-collapsed="true"] .rail-btn,
+  #sidebar[data-collapsed="true"] .foot-cta,
+  #sidebar[data-collapsed="true"] .foot-row,
+  #sidebar[data-collapsed="true"] .workspace-btn {
+    justify-content: flex-start;
+    padding: 0 10px;
+  }
+  #sidebar[data-collapsed="true"] .chats-scroll { display: block; }
+  #sidebar[data-collapsed="true"] #sidebar-collapse { display: inline-flex; }
+  #sidebar[data-collapsed="true"] #sidebar-expand { display: none; }
   body.sidebar-open #sidebar { transform: translateX(0); }
   .msg.user .bubble { max-width: 92%; }
   .model-panel { bottom: 130px; width: calc(100% - 20px); }
