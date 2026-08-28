@@ -900,7 +900,7 @@ function makeTuiUi() {
     streamReasoning(t) {
       const frame = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
       const idx = Math.floor(Date.now() / 120) % frame.length;
-      pendingMd += dim('⋯ ' + frame[idx] + ' ' + t);
+      pendingMd = dim('⋯ ' + frame[idx] + ' thinking');
       pendingReplace(
         renderMarkdown(pendingMd, Math.min(termWidth(), 96)).split('\n')
       );
