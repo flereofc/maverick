@@ -1224,6 +1224,7 @@ submitHandler = async function (raw) {
 
   history.push({ role: 'user', content: text });
   if (history.length > HISTORY_LIMIT) history = history.slice(-HISTORY_LIMIT);
+  if (ui && ui.out) ui.out(yellow('? ') + text);
 
   if (ui.beginStream) ui.beginStream();
 
