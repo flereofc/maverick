@@ -898,7 +898,9 @@ function makeTuiUi() {
       );
     },
     streamReasoning(t) {
-      pendingMd += dim(t);
+      const frame = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+      const idx = Math.floor(Date.now() / 120) % frame.length;
+      pendingMd += dim('⋯ ' + frame[idx] + ' ' + t);
       pendingReplace(
         renderMarkdown(pendingMd, Math.min(termWidth(), 96)).split('\n')
       );
